@@ -6,7 +6,8 @@ from PySide6.QtCore import QUrl, QSize, Qt
 
 # CONFIGURATION
 # Set the URL of your deployed terminal here.
-TERMINAL_URL = "https://terminal-app.suras.org"
+# Updated for private-only Tailscale access
+TERMINAL_URL = "http://100.75.79.110:7681"
 APP_TITLE = "Oracle Terminal"
 
 class MainWindow(QMainWindow):
@@ -31,6 +32,7 @@ def launch_terminal():
     """
     print(f"Launching {APP_TITLE}...")
     print(f"Connecting to: {TERMINAL_URL}")
+    print("Ensure you are connected to Tailscale!")
     
     app = QApplication(sys.argv)
     window = MainWindow()
