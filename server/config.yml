@@ -1,0 +1,12 @@
+# Cloudflare Tunnel Configuration
+# Replace <TUNNEL_UUID> with your tunnel ID.
+tunnel: <TUNNEL_UUID>
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  # This rule directs traffic for your chosen hostname to the ttyd container
+  - hostname: terminal-app.suras.org
+    service: http://ttyd:7681
+    
+  # Default fallback
+  - service: http_status:404
