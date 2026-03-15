@@ -1,74 +1,68 @@
-# Oracle Terminal (Standalone)
+# Oracle Terminal (Hardened & Private)
 
-A dedicated, standalone terminal application for your Oracle server.
-This project consists of two parts:
-1.  **Server:** A Docker container running `ttyd` (web terminal) + `cloudflared` (tunnel).
-2.  **Client:** A lightweight Windows application (Python) that connects to the terminal.
+A dedicated, hardened terminal application for your Oracle server.
+This project is now configured for **Private-Only Access** via Tailscale.
 
-## Prerequisites
+## Features
 
-- **Server:** Docker & Docker Compose installed on your Oracle Server.
-- **Client:** Python 3.10+ installed on your Windows laptop.
-- **Cloudflare:** A Cloudflare account for creating the tunnel.
-
----
-
-## Part 1: Server Setup
-
-1.  **Create a Cloudflare Tunnel:**
-    Run this on your local machine (or server) if you have `cloudflared` installed:
-    ```bash
-    cloudflared tunnel login
-    cloudflared tunnel create oracle-term
-    ```
-    This will generate a UUID and a credentials JSON file (e.g., `~/.cloudflared/<UUID>.json`).
-
-2.  **Prepare Server Files:**
-    Copy the `server/` directory from this project to your Oracle server (e.g., to `~/oracle-terminal`).
-
-3.  **Configure Tunnel:**
-    - Copy your tunnel credentials JSON file to `server/credentials.json`.
-    - Edit `server/config.yml`:
-        - Replace `<TUNNEL_UUID>` with your tunnel's UUID.
-        - Update `hostname` (e.g., `terminal-app.suras.org`) to your desired domain.
-
-4.  **Route DNS:**
-    In your Cloudflare Dashboard (DNS), create a **CNAME** record:
-    - Name: `terminal-app` (or whatever hostname you chose)
-    - Target: `<UUID>.cfargotunnel.com`
-
-5.  **Start the Service:**
-    SSH into your server and run:
-    ```bash
-    cd ~/oracle-terminal
-    docker-compose up -d
-    ```
-    
-    *Security Note:* This exposes your root shell to the internet via the tunnel. Ensure you configure **Cloudflare Access (Zero Trust)** for this hostname to add an authentication layer (e.g., limit to your email only).
+- **Tailscale Only:** The terminal is bound EXCLUSIVELY to your Tailscale IP (`100.75.79.110`), making it invisible to the public internet.
+- **Layered Security:** Includes Basic Authentication (`admin:oracle-root-access`) as a second layer of defense.
+- **Session Persistence:** Automatically uses `tmux` with a default session (`root-session`), ensuring your work stays alive even if you disconnect.
+- **Session Manager:** Includes a custom `menu` tool for managing sessions, windows, and system status.
+- **Root-Level Access:** Runs as a privileged container with `chroot` to the host filesystem.
 
 ---
 
-## Part 2: Client Setup (Windows)
+## Accessing the Terminal
 
-1.  **Install Python:**
-    Ensure Python is installed. Download from python.org if needed.
+1.  **Connect to Tailscale:** Ensure your device (phone, laptop) is connected to your Tailnet.
+2.  **Open URL:** Visit: `http://100.75.79.110:7681`
+3.  **Login:**
+    - **User:** `admin`
+    - **Password:** `oracle-root-access`
 
-2.  **Install Dependencies:**
-    Open PowerShell in the `client/` folder and run:
-    ```powershell
-    pip install -r requirements.txt
-    ```
+---
 
-3.  **Configure App:**
-    Edit `client/app.py`:
-    - Update `TERMINAL_URL` to match the hostname you configured in Part 1.
+## Session Management (The "menu" tool)
 
-4.  **Run the App:**
-    Double-click `client/app.py` or run:
-    ```powershell
-    python client/app.py
-    ```
+Once logged in, type:
+```bash
+menu
+```
+This interactive manager allows you to:
+1.  **List All Sessions:** View active tmux sessions.
+2.  **Kill Current Session:** Force a reset if the session becomes unresponsive.
+3.  **New Window:** Open a new window within the same session.
+4.  **System Status:** Quick view of server health via `htop`.
 
-## Notes
-- **Full Access:** The terminal runs as `root` inside the container but is `chroot`ed to the host filesystem. You have full control over the server.
-- **Independence:** This setup is completely separate from InfraGem or other services. It runs in its own network stack.
+---
+
+## Server Setup & Maintenance
+
+The active configuration is located on the Oracle server at `/opt/oracle-terminal/`.
+
+### Configuration Files
+- `server/docker-compose.yml`: Defines the `ttyd` service with Tailscale IP binding and host filesystem access.
+- `server/term-menu.sh`: The source for the interactive session manager (installed at `/usr/local/bin/term-menu`).
+
+### Manual Installation
+To re-install the session manager on the server:
+```bash
+sudo cp server/term-menu.sh /usr/local/bin/term-menu
+sudo chmod +x /usr/local/bin/term-menu
+sudo bash -c 'echo "alias menu=/usr/local/bin/term-menu" > /etc/profile.d/terminal-menu.sh'
+```
+
+### Restarting the Service
+```bash
+cd /opt/oracle-terminal
+docker-compose down
+docker-compose up -d
+```
+
+---
+
+## Development & Backup
+
+- **Sync from Server:** Use `scp` to pull the active `docker-compose.yml` and `term-menu.sh` back to this repository.
+- **GitHub:** This repository serves as the definitive backup for the hardened terminal state.

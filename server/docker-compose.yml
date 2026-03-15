@@ -4,27 +4,12 @@ services:
   ttyd:
     image: tsl0922/ttyd:1.7.3
     container_name: oracle-terminal
-    # Run ttyd on port 7681. 
-    # The command uses 'chroot /host' to give the terminal session access to the actual server filesystem.
-    command: ttyd -p 7681 -t title="Oracle Terminal" -t fontSize=14 /bin/sh -c "chroot /host /bin/bash"
-    privileged: true # Required for chroot and accessing host devices
+    # Keep the basic auth and tmux session persistence
+    command: ttyd -c admin:oracle-root-access -p 7681 -t title="Oracle Terminal" -t fontSize=14 /bin/sh -c "chroot /host tmux new -A -s root-session"
+    privileged: true
     volumes:
-      - /:/host # Mount the entire host filesystem to /host
+      - /:/host
+    ports:
+      # Bind EXCLUSIVELY to the Tailscale IP on port 7681
+      - "100.75.79.110:7681:7681"
     restart: unless-stopped
-    networks:
-      - term-net
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: oracle-tunnel
-    restart: unless-stopped
-    command: tunnel run
-    # Mount the config and credentials
-    volumes:
-      - ./config.yml:/etc/cloudflared/config.yml:ro
-      - ./credentials.json:/etc/cloudflared/credentials.json:ro
-    networks:
-      - term-net
-
-networks:
-  term-net:
