@@ -1,11 +1,29 @@
-import webview
 import sys
 import os
+from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtCore import QUrl, QSize, Qt
 
 # CONFIGURATION
 # Set the URL of your deployed terminal here.
 TERMINAL_URL = "https://terminal-app.suras.org"
 APP_TITLE = "Oracle Terminal"
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle(APP_TITLE)
+        self.setMinimumSize(QSize(1024, 768))
+        
+        # Create WebEngineView
+        self.browser = QWebEngineView()
+        self.browser.setUrl(QUrl(TERMINAL_URL))
+        
+        # Set as central widget
+        self.setCentralWidget(self.browser)
+        
+        # Optional: dark background for a cleaner feel before load
+        self.setStyleSheet("background-color: #0f172a;")
 
 def launch_terminal():
     """
@@ -14,20 +32,11 @@ def launch_terminal():
     print(f"Launching {APP_TITLE}...")
     print(f"Connecting to: {TERMINAL_URL}")
     
-    # Create a window
-    # width=1024, height=768 is a good default for terminals
-    window = webview.create_window(
-        APP_TITLE,
-        TERMINAL_URL,
-        width=1024,
-        height=768,
-        resizable=True,
-        confirm_close=True,
-        background_color='#0f172a' # Dark background to match terminal
-    )
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
     
-    # Start the GUI loop
-    webview.start()
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
     try:
