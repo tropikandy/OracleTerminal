@@ -1,0 +1,14 @@
+/* Standard Desktop View (14px) */
+.terminal {
+    font-size: 14px;
+}
+
+/* Automatic Mobile Scaling */
+@media (max-width: 768px) {
+    body {
+        /* Zoom the entire UI by 2x on mobile devices */
+        zoom: 2.0;
+        -moz-transform: scale(2.0);
+        -moz-transform-origin: 0 0;
+    }
+}
